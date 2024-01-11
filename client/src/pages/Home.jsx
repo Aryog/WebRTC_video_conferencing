@@ -1,24 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSocket } from "../providers/socket";
+import { useSocket } from "../context/SocketProvider";
 const Homepage = () => {
-    const { socket } = useSocket();
+    const [email, setEmail] = useState("");
+    const [roomId, setRoomId] = useState("");
+
+    const socket = useSocket();
     const navigate = useNavigate();
-    const [email, setEmail] = useState();
-    const [roomId, setRoomId] = useState();
 
 
-    const handleRoomJoined = ({ roomId }) => {
+    const handleRoomJoined = useCallback(({ roomId }) => {
         console.log('Room Joined', roomId);
         navigate(`/room/${roomId}`);
-    }
+    }, [navigate]);
 
 
     useEffect(() => {
-        socket.on('joined-room', handleRoomJoined)
-    }, [socket])
+        socket.on("room:join", handleRoomJoined)
+        return () => {
+            socket.off("room:join", handleRoomJoined)
+        }
+    }, [socket, handleRoomJoined])
+
     const handleJoinRoom = () => {
-        socket.emit('join-room', { emailId: email, roomId })
+        socket.emit("room:join", { emailId: email, roomId })
     }
     return (
         <div className="homepage-container">
